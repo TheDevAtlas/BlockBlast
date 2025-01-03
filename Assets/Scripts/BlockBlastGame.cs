@@ -36,6 +36,17 @@ public class BlockBlastGame : MonoBehaviour
         // Define basic shapes with rotations (L, T, Square, Line, Z, S, J)
         List<List<Vector2Int[]>> shapes = new List<List<Vector2Int[]>>();
 
+        // Single Piece
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0)}
+        });
+
+        // Double Piece
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0)},
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1)}
+        });
+
         // L Shape Rotations
         shapes.Add(new List<Vector2Int[]> {
             new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(2, 1) },
