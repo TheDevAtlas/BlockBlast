@@ -33,33 +33,72 @@ public class BlockBlastGame : MonoBehaviour
 
     private void GeneratePieceShapes()
     {
-        // Define basic shapes (L, T, Square, Line)
-        List<Vector2Int[]> shapes = new List<Vector2Int[]>();
+        // Define basic shapes with rotations (L, T, Square, Line, Z, S, J)
+        List<List<Vector2Int[]>> shapes = new List<List<Vector2Int[]>>();
 
-        // L Shape
-        shapes.Add(new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(2, 1) });
+        // L Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(2, 1) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(1, 0) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(0, -1) },
+            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 0), new Vector2Int(1, 2) }
+        });
 
-        // T Shape
-        shapes.Add(new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, 1) });
+        // T Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, 1) },
+            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1), new Vector2Int(1, 0) },
+            new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(1, 2), new Vector2Int(0, 1) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, -1) }
+        });
 
-        // Square
-        shapes.Add(new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) });
+        // Square Shape (No rotation needed, only one state)
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) }
+        });
 
-        // Line
-        shapes.Add(new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0) });
+        // Line Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(0, 3) }
+        });
 
-        foreach (var shape in shapes)
+        // Z Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(2, 1) },
+            new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2) }
+        });
+
+        // S Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 0), new Vector2Int(2, 0) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 2) }
+        });
+
+        // J Shape Rotations
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(2, -1) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(1, 2) }
+        });
+
+        foreach (var shapeRotations in shapes)
         {
-            GameObject piece = new GameObject("Piece");
-            foreach (var square in shape)
+            foreach (var shape in shapeRotations)
             {
-                Vector2 fPos = new Vector2(square.x, square.y);
-                Instantiate(squarePrefab, fPos * squareSize, Quaternion.identity, piece.transform);
+                GameObject piece = new GameObject("Piece");
+                foreach (var square in shape)
+                {
+                    Vector2 fPos = new Vector2(square.x, square.y);
+                    Instantiate(squarePrefab, fPos * squareSize, Quaternion.identity, piece.transform);
+                }
+                piece.SetActive(false);
+                pieceShapes.Add(piece);
             }
-            piece.SetActive(false);
-            pieceShapes.Add(piece);
         }
     }
+
 
     private void SpawnPiecesInArea()
     {
