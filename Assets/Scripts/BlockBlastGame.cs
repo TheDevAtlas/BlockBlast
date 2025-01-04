@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 
 public class BlockBlastGame : MonoBehaviour
 {
+    public GameObject particleEffectPrefab;
     public int gridWidth = 10;
     public int gridHeight = 10;
     public float squareSize = 1f;
@@ -19,11 +20,91 @@ public class BlockBlastGame : MonoBehaviour
 
     public Sprite[] squares;
 
+    public SoundManager soundManager;
+
+    public List<Color[]> particleColors = new List<Color[]>
+    {
+        new Color[] { Color.blue, Color.cyan },
+        new Color[] { Color.red, Color.yellow },
+        new Color[] { Color.green, Color.cyan }
+    };
+
+
     private void Start()
     {
+        soundManager = FindObjectOfType<SoundManager>();
+
         InitializeGrid();
+
+        // Start the game after a 10-second delay
+        StartCoroutine(StartGameWithDelay());
+
+        StartCoroutine(SpawnPieces());
+
+        StartCoroutine(CreateUniqueStartingBoard());
+
+    }
+
+    private IEnumerator StartGameWithDelay()
+    {
+        yield return new WaitForSeconds(2f); // Wait for 10 seconds
         GeneratePieceShapes();
+    }
+
+    private IEnumerator SpawnPieces()
+    {
+        yield return new WaitForSeconds(2f); // Wait for 10 seconds
         SpawnPiecesInArea();
+    }
+
+    private IEnumerator CreateUniqueStartingBoard()
+    {
+        float fillDuration = 1f; // Time to fill the grid
+        float timePerPiece = fillDuration / (gridHeight); // Time between each piece placement
+
+        // Fill the grid with single pieces
+        for (int y = 0; y < gridHeight; y++)
+        {
+            for (int x = 0; x < gridWidth; x++)
+            {
+                if(grid[x,y] == null)
+                {
+                    Vector3 position = new Vector3(x * squareSize, y * squareSize, 0);
+                    Transform square = Instantiate(squarePrefab, position, Quaternion.identity, gridParent).transform;
+
+                    // Randomize sprite for the single piece
+                    Sprite randomSprite = squares[Random.Range(0, squares.Length)];
+                    square.gameObject.GetComponent<SpriteRenderer>().sprite = randomSprite;
+
+                    // Store the square in the grid
+                    grid[x, y] = square;
+                }
+                
+
+            }
+            yield return new WaitForSeconds(timePerPiece);
+        }
+
+        // Remove pieces at random to create a unique starting board
+        int totalPieces = gridWidth * gridHeight;
+        int piecesToRemove = (int)Random.Range(totalPieces / 1.25f, totalPieces / 1.5f); // Remove 25-50% of pieces
+
+        for (int i = 0; i < piecesToRemove; i++)
+        {
+            // Choose a random piece to remove
+            int randomX, randomY;
+            do
+            {
+                randomX = Random.Range(0, gridWidth);
+                randomY = Random.Range(0, gridHeight);
+            } while (grid[randomX, randomY] == null); // Ensure the piece exists
+
+            // Remove the piece
+            Destroy(grid[randomX, randomY].gameObject);
+            grid[randomX, randomY] = null;
+
+            yield return new WaitForSeconds(1f / piecesToRemove); // Small delay for the removal effect
+        }
     }
 
     private void InitializeGrid()
@@ -33,18 +114,53 @@ public class BlockBlastGame : MonoBehaviour
 
     private void GeneratePieceShapes()
     {
-        // Define basic shapes with rotations (L, T, Square, Line, Z, S, J)
+        // Define basic shapes with rotations
         List<List<Vector2Int[]>> shapes = new List<List<Vector2Int[]>>();
 
-        // Single Piece
+        // 1x1 Piece
         shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0)}
+            new Vector2Int[] { new Vector2Int(0, 0) }
         });
 
-        // Double Piece
+        // 2x2 Piece
         shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0)},
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1)}
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) }
+        });
+
+        // 3x3 Piece
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0),
+                            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1),
+                            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2) }
+        });
+
+        // 2x3 Piece
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2), new Vector2Int(1, 2) }
+        });
+
+        // 3x2 Piece
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0),
+                            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1) }
+        });
+
+        // 1x4 and 4x1 Pieces
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(0, 3) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0) }
+        });
+
+        // 1x3 and 3x1 Pieces
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) }
+        });
+
+        // 1x5 and 5x1 Pieces
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(0, 3), new Vector2Int(0, 4) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0), new Vector2Int(4, 0) }
         });
 
         // L Shape Rotations
@@ -55,43 +171,24 @@ public class BlockBlastGame : MonoBehaviour
             new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 0), new Vector2Int(1, 2) }
         });
 
-        // T Shape Rotations
-        shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, 1) },
-            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1), new Vector2Int(1, 0) },
-            new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(1, 2), new Vector2Int(0, 1) },
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(1, -1) }
-        });
-
-        // Square Shape (No rotation needed, only one state)
-        shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1) }
-        });
-
-        // Line Shape Rotations
-        shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(3, 0) },
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(0, 3) }
-        });
-
-        // Z Shape Rotations
-        shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(2, 1) },
-            new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(0, 2) }
-        });
-
-        // S Shape Rotations
-        shapes.Add(new List<Vector2Int[]> {
-            new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 0), new Vector2Int(2, 0) },
-            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(1, 2) }
-        });
-
         // J Shape Rotations
         shapes.Add(new List<Vector2Int[]> {
             new Vector2Int[] { new Vector2Int(0, 1), new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0) },
             new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1) },
             new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0), new Vector2Int(2, -1) },
             new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(1, 2) }
+        });
+
+        // Big L Shape
+        shapes.Add(new List<Vector2Int[]> {
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2),
+                            new Vector2Int(1, 0), new Vector2Int(2, 0) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0),
+                            new Vector2Int(2, 1), new Vector2Int(2, 2) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(0, 1), new Vector2Int(0, 2),
+                            new Vector2Int(1, 2), new Vector2Int(2, 2) },
+            new Vector2Int[] { new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0),
+                            new Vector2Int(0, 1), new Vector2Int(0, 2)}
         });
 
         foreach (var shapeRotations in shapes)
@@ -109,6 +206,7 @@ public class BlockBlastGame : MonoBehaviour
             }
         }
     }
+
 
 
     private void SpawnPiecesInArea()
@@ -183,16 +281,16 @@ public class BlockBlastGame : MonoBehaviour
         Destroy(piece);
         CheckAndClearRowsAndColumns();
 
+        soundManager.PlayRandomSound("PiecePlaced");
+
         return true;
     }
 
     private void CheckAndClearRowsAndColumns()
     {
-        // return;
+        HashSet<Vector2Int> positionsToClear = new HashSet<Vector2Int>();
 
-        List<int> rowsToClear = new List<int>();
-        List<int> columnsToClear = new List<int>();
-
+        // Check for full rows
         for (int y = 0; y < gridHeight; y++)
         {
             bool fullRow = true;
@@ -204,9 +302,20 @@ public class BlockBlastGame : MonoBehaviour
                     break;
                 }
             }
-            if (fullRow) rowsToClear.Add(y);
+            if (fullRow)
+            {
+                // Generate explosion effect for the row
+                Vector3 effectPosition = new Vector3(gridWidth * squareSize / 2, y * squareSize, 0);
+                GenerateExplosionEffect(effectPosition);
+
+                for (int x = 0; x < gridWidth; x++)
+                {
+                    positionsToClear.Add(new Vector2Int(x, y));
+                }
+            }
         }
 
+        // Check for full columns
         for (int x = 0; x < gridWidth; x++)
         {
             bool fullColumn = true;
@@ -218,27 +327,56 @@ public class BlockBlastGame : MonoBehaviour
                     break;
                 }
             }
-            if (fullColumn) columnsToClear.Add(x);
-        }
-
-        foreach (int y in rowsToClear)
-        {
-            for (int x = 0; x < gridWidth; x++)
+            if (fullColumn)
             {
-                Destroy(grid[x, y].gameObject);
-                grid[x, y] = null;
+                // Generate explosion effect for the column
+                Vector3 effectPosition = new Vector3(x * squareSize, gridHeight * squareSize / 2, 0);
+                GenerateExplosionEffect(effectPosition, true);
+
+                for (int y = 0; y < gridHeight; y++)
+                {
+                    positionsToClear.Add(new Vector2Int(x, y));
+                }
             }
         }
 
-        foreach (int x in columnsToClear)
+        // Clear all positions in the HashSet
+        foreach (var position in positionsToClear)
         {
-            for (int y = 0; y < gridHeight; y++)
+            if (grid[position.x, position.y] != null)
             {
-                Destroy(grid[x, y].gameObject);
-                grid[x, y] = null;
+                Destroy(grid[position.x, position.y].gameObject);
+                grid[position.x, position.y] = null;
             }
+        }
+
+        // Camera shake and sound
+        if (positionsToClear.Count > 0)
+        {
+            StartCoroutine(ShakeCamera(0.2f, 0.1f));
+            soundManager.PlayRandomSound("ClearLine");
+        }
+
+        if (!CanAnyPieceFit())
+        {
+            Debug.Log("No valid moves left! Resetting the board.");
+            HandleNoValidMoves();
         }
     }
+
+    private void GenerateExplosionEffect(Vector3 position, bool isColumn = false)
+    {
+        GameObject effect = Instantiate(particleEffectPrefab, position, isColumn ? Quaternion.Euler(0, 0, 90) : Quaternion.identity);
+        ParticleSystem particleSystem = effect.GetComponent<ParticleSystem>();
+        if (particleSystem != null && particleColors.Count > 0)
+        {
+            int randomIndex = Random.Range(0, particleColors.Count);
+            var main = particleSystem.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(particleColors[randomIndex][0], particleColors[randomIndex][1]);
+        }
+        Destroy(effect, 1f); // Destroy after 1 second
+    }
+
 
     public Vector2Int GetNearestGridPosition(Vector3 worldPosition)
     {
@@ -254,37 +392,90 @@ public class BlockBlastGame : MonoBehaviour
         {
             SpawnPiecesInArea();
         }
-
-        // int randomIndex = Random.Range(0, pieceShapes.Count);
-        // GameObject newPiece = Instantiate(pieceShapes[randomIndex], pieceParent);
-        // newPiece.SetActive(true);
-
-        // Sprite pieceType = squares[Random.Range(0, squares.Length-1)];
-
-        // Vector2 spawnPosition = GetRandomPositionInArea();
-        // newPiece.transform.position = spawnPosition;
-
-        // // Add Rigidbody2D to the parent piece
-        // Rigidbody2D rb = newPiece.AddComponent<Rigidbody2D>();
-        // rb.bodyType = RigidbodyType2D.Kinematic; // Prevent physics simulation
-
-        // // Add CompositeCollider2D to the parent piece
-        // CompositeCollider2D compositeCollider = newPiece.AddComponent<CompositeCollider2D>();
-        // compositeCollider.geometryType = CompositeCollider2D.GeometryType.Polygons;
-
-        // // Add BoxCollider2D to each child square and configure them to work with the composite collider
-        // foreach (Transform child in newPiece.transform)
-        // {
-        //     BoxCollider2D boxCollider = child.gameObject.AddComponent<BoxCollider2D>();
-        //     boxCollider.usedByComposite = true; // Enable usage by the composite collider
-
-        //     child.GetComponent<SpriteRenderer>().sprite = pieceType;
-        // }
-
-        // newPiece.AddComponent<DraggablePiece>();
-        // spawnedPieces.Add(newPiece);
     }
 
+    public IEnumerator ShakeCamera(float duration, float magnitude)
+    {
+        Vector3 originalPosition = Camera.main.transform.position;
+        float elapsed = 0.0f;
+
+        while (elapsed < duration)
+        {
+            float offsetX = Random.Range(-1f, 1f) * magnitude;
+            float offsetY = Random.Range(-1f, 1f) * magnitude;
+
+            Camera.main.transform.position = new Vector3(originalPosition.x + offsetX, originalPosition.y + offsetY, originalPosition.z);
+
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        Camera.main.transform.position = originalPosition;
+    }
+
+    // Method to check if any piece can be placed
+    public bool CanAnyPieceFit()
+    {
+        // Remove any destroyed objects from the list
+        spawnedPieces.RemoveAll(piece => piece == null);
+
+        foreach (var piece in spawnedPieces)
+        {
+            if (piece == null) continue; // Skip null references
+
+            foreach (Transform square in piece.transform)
+            {
+                Vector2Int piecePosition = GetNearestGridPosition(square.position);
+
+                // Iterate through possible placements on the grid
+                for (int x = 0; x < gridWidth; x++)
+                {
+                    for (int y = 0; y < gridHeight; y++)
+                    {
+                        if (CanPlacePieceAtPosition(piece, new Vector2Int(x, y)))
+                        {
+                            return true; // At least one piece fits
+                        }
+                    }
+                }
+            }
+        }
+
+        return false; // No piece fits
+    }
+
+
+    // Helper method to check if a piece can fit at a specific grid position
+    private bool CanPlacePieceAtPosition(GameObject piece, Vector2Int gridPosition)
+    {
+        foreach (Transform square in piece.transform)
+        {
+            Vector2Int gridPos = gridPosition + Vector2Int.RoundToInt(square.localPosition / squareSize);
+
+            // Check if position is out of bounds or already occupied
+            if (gridPos.x < 0 || gridPos.x >= gridWidth || gridPos.y < 0 || gridPos.y >= gridHeight || grid[gridPos.x, gridPos.y] != null)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void HandleNoValidMoves()
+    {
+        // Destroy all current player pieces
+        foreach (var piece in spawnedPieces)
+        {
+            if (piece != null)
+            {
+                Destroy(piece);
+            }
+        }
+        spawnedPieces.Clear();
+
+        StartCoroutine(CreateUniqueStartingBoard());
+        StartCoroutine(SpawnPieces());
+    }
 
 }
 
@@ -353,6 +544,8 @@ public class DraggablePiece : MonoBehaviour
         float duration = 0.333f; // 1/3 second
         float elapsed = 0f;
         Vector3 initialPosition = transform.position;
+
+        gameManager.soundManager.PlayRandomSound("ReturnPiece");
 
         while (elapsed < duration)
         {
